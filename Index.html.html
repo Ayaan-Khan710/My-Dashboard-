@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KAM Night Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181b22;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --accent: #6ee7b7;
+    --accent2: #818cf8;
+    --accent3: #f9a8d4;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --success: #6ee7b7;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* Subtle starfield bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, rgba(110,231,183,0.15) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 10%, rgba(129,140,248,0.15) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 80%, rgba(249,168,212,0.1) 0%, transparent 100%),
+      radial-gradient(600px at 0% 0%, rgba(110,231,183,0.04) 0%, transparent 60%),
+      radial-gradient(600px at 100% 100%, rgba(129,140,248,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 28px 20px; position: relative; z-index: 1; }
+
+  /* Header */
+  .header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+  .header-left h1 { font-family: var(--mono); font-size: 22px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
+  .header-left h1 span { color: var(--accent); }
+  .header-left p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .live-badge { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--accent); border: 1px solid rgba(110,231,183,0.25); border-radius: 20px; padding: 4px 12px; }
+  .live-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(0.8)} }
+
+  /* Grid layout */
+  .grid-main { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .grid-mid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-bot { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  }
+  .card-title {
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: .12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* Clock cards */
+  .clock-card { text-align: center; }
+  .clock-card .tz-label { font-size: 10px; font-family: var(--mono); color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
+  .clock-card .tz-time { font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--text); letter-spacing: -1px; line-height: 1; }
+  .clock-card .tz-date { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .clock-card .tz-status { display: inline-block; font-size: 10px; font-family: var(--mono); padding: 2px 8px; border-radius: 20px; margin-top: 8px; }
+  .status-open { background: rgba(110,231,183,0.12); color: var(--accent); border: 1px solid rgba(110,231,183,0.2); }
+  .status-closed { background: rgba(248,113,113,0.1); color: var(--danger); border: 1px solid rgba(248,113,113,0.15); }
+  .status-soon { background: rgba(251,191,36,0.1); color: var(--warn); border: 1px solid rgba(251,191,36,0.2); }
+
+  /* Checklist */
+  .check-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+  .check-tab { font-size: 11px; font-family: var(--mono); padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border2); background: transparent; color: var(--muted); cursor: pointer; transition: all .2s; }
+  .check-tab.active { background: rgba(110,231,183,0.1); color: var(--accent); border-color: rgba(110,231,183,0.3); }
+  .checklist { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+  .checklist::-webkit-scrollbar { width: 3px; }
+  .checklist::-webkit-scrollbar-track { background: transparent; }
+  .checklist::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
+  .check-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; transition: all .15s; background: var(--surface2); }
+  .check-item:hover { border-color: var(--border2); }
+  .check-item.done { opacity: .45; }
+  .check-item.done .ci-text { text-decoration: line-through; }
+  .ci-box { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--muted); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .check-item.done .ci-box { background: var(--accent); border-color: var(--accent); }
+  .ci-check { display: none; }
+  .check-item.done .ci-check { display: block; width: 8px; height: 8px; border-right: 2px solid #0a0c10; border-bottom: 2px solid #0a0c10; transform: rotate(45deg) translate(-1px,-1px); }
+  .ci-text { font-size: 13px; color: var(--text); flex: 1; line-height: 1.4; }
+  .ci-tag { font-size: 10px; font-family: var(--mono); padding: 1px 7px; border-radius: 10px; }
+  .tag-client { background: rgba(129,140,248,0.12); color: var(--accent2); }
+  .tag-platform { background: rgba(251,191,36,0.1); color: var(--warn); }
+  .tag-team { background: rgba(249,168,212,0.1); color: var(--accent3); }
+  .tag-leads { background: rgba(110,231,183,0.1); color: var(--accent); }
+  .check-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .prog-bar { flex: 1; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width .4s ease; }
+  .prog-label { font-size: 11px; font-family: var(--mono); color: var(--muted); min-width: 36px; text-align: right; }
+
+  /* Client tracker */
+  .client-grid { display: flex; flex-direction: column; gap: 8px; }
+  .client-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface2); border-radius: 8px; border: 1px solid var(--border); cursor: pointer; transition: border-color .15s; }
+  .client-row:hover { border-color: var(--border2); }
+  .client-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .client-name { font-size: 13px; font-weight: 500; color: var(--text); flex: 1; }
+  .client-status-badge { font-size: 10px; font-family: var(--mono); padding: 2px 8px; border-radius: 10px; }
+  .s-updated { background: rgba(110,231,183,0.1); color: var(--accent); }
+  .s-pending { background: rgba(251,191,36,0.1); color: var(--warn); }
+  .s-attention { background: rgba(248,113,113,0.1); color: var(--danger); }
+  .client-time { font-size: 11px; font-family: var(--mono); color: var(--muted); }
+  .expand-icon { font-size: 10px; color: var(--muted); transition: transform .2s; }
+  .client-detail { display: none; padding: 10px 12px 4px; border-top: 1px solid var(--border); margin-top: 6px; }
+  .client-detail.open { display: block; }
+  .detail-label { font-size: 10px; font-family: var(--mono); color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px; }
+  .update-entry { display: flex; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+  .update-time { font-family: var(--mono); color: var(--muted); flex-shrink: 0; }
+  .update-text { color: var(--text); line-height: 1.5; }
+  .add-update { display: flex; gap: 8px; margin-top: 6px; }
+  .add-update input { flex: 1; background: var(--bg); border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--text); font-family: var(--sans); outline: none; }
+  .add-update input:focus { border-color: rgba(110,231,183,0.4); }
+  .add-update button { background: rgba(110,231,183,0.1); border: 1px solid rgba(110,231,183,0.25); color: var(--accent); border-radius: 6px; padding: 6px 12px; font-size: 11px; font-family: var(--mono); cursor: pointer; transition: all .15s; }
+  .add-update button:hover { background: rgba(110,231,183,0.2); }
+
+  /* Notes */
+  .notes-area { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 13px; color: var(--text); font-family: var(--sans); line-height: 1.7; resize: vertical; min-height: 130px; outline: none; transition: border-color .2s; }
+  .notes-area:focus { border-color: rgba(110,231,183,0.3); }
+  .notes-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .notes-saved { font-size: 11px; font-family: var(--mono); color: var(--muted); }
+  .notes-clear { font-size: 11px; font-family: var(--mono); color: var(--muted); background: none; border: none; cursor: pointer; text-decoration: underline; }
+
+  /* Reminders */
+  .reminder-list { display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto; }
+  .reminder-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--surface2); border-radius: 8px; border: 1px solid var(--border); font-size: 13px; }
+  .reminder-time { font-family: var(--mono); font-size: 12px; color: var(--accent2); min-width: 48px; }
+  .reminder-text { flex: 1; color: var(--text); }
+  .reminder-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 4px; line-height: 1; }
+  .reminder-del:hover { color: var(--danger); }
+  .add-reminder { display: flex; gap: 8px; margin-top: 10px; }
+  .add-reminder input[type="time"] { background: var(--bg); border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--text); font-family: var(--mono); outline: none; width: 100px; }
+  .add-reminder input[type="text"] { flex: 1; background: var(--bg); border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--text); font-family: var(--sans); outline: none; }
+  .add-reminder input:focus { border-color: rgba(110,231,183,0.4); }
+  .add-reminder button { background: rgba(129,140,248,0.1); border: 1px solid rgba(129,140,248,0.25); color: var(--accent2); border-radius: 6px; padding: 6px 12px; font-size: 11px; font-family: var(--mono); cursor: pointer; transition: all .15s; }
+  .add-reminder button:hover { background: rgba(129,140,248,0.2); }
+
+  /* Update log */
+  .log-entries { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
+  .log-entry { display: flex; gap: 10px; padding: 8px 12px; background: var(--surface2); border-radius: 8px; border: 1px solid var(--border); font-size: 12px; align-items: flex-start; }
+  .log-client { font-family: var(--mono); color: var(--accent2); font-size: 11px; min-width: 60px; margin-top: 1px; }
+  .log-time { font-family: var(--mono); color: var(--muted); font-size: 11px; min-width: 45px; margin-top: 1px; }
+  .log-text { color: var(--text); flex: 1; line-height: 1.5; }
+  .log-empty { font-size: 12px; color: var(--muted); text-align: center; padding: 20px 0; font-family: var(--mono); }
+  .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .log-clear { font-size: 11px; font-family: var(--mono); color: var(--muted); background: none; border: none; cursor: pointer; text-decoration: underline; }
+
+  /* Toast notification */
+  #toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--surface2);
+    border: 1px solid rgba(110,231,183,0.3);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    z-index: 1000;
+    transform: translateX(200px);
+    opacity: 0;
+    transition: all .3s ease;
+  }
+  #toast.show { transform: translateX(0); opacity: 1; }
+
+  @media(max-width:700px){
+    .grid-main{grid-template-columns:1fr 1fr;}
+    .grid-mid{grid-template-columns:1fr;}
+    .grid-bot{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Night <span>Ops</span> Dashboard</h1>
+      <p id="header-date">Loading...</p>
+    </div>
+    <div class="live-badge"><div class="live-dot"></div><span id="ist-clock">--:--</span> IST</div>
+  </div>
+
+  <!-- Clocks -->
+  <div class="grid-main" id="clocks-grid">
+    <div class="card clock-card" id="clk-gmt">
+      <div class="tz-label">GMT / London</div>
+      <div class="tz-time" id="t-gmt">--:--</div>
+      <div class="tz-date" id="d-gmt">--</div>
+      <div class="tz-status" id="s-gmt">--</div>
+    </div>
+    <div class="card clock-card" id="clk-est">
+      <div class="tz-label">EST / New York</div>
+      <div class="tz-time" id="t-est">--:--</div>
+      <div class="tz-date" id="d-est">--</div>
+      <div class="tz-status" id="s-est">--</div>
+    </div>
+    <div class="card clock-card" id="clk-pst">
+      <div class="tz-label">PST / Los Angeles</div>
+      <div class="tz-time" id="t-pst">--:--</div>
+      <div class="tz-date" id="d-pst">--</div>
+      <div class="tz-status" id="s-pst">--</div>
+    </div>
+    <div class="card clock-card" id="clk-syd">
+      <div class="tz-label">AEDT / Sydney</div>
+      <div class="tz-time" id="t-syd">--:--</div>
+      <div class="tz-date" id="d-syd">--</div>
+      <div class="tz-status" id="s-syd">--</div>
+    </div>
+  </div>
+
+  <!-- Checklist + Client tracker -->
+  <div class="grid-mid">
+    <!-- Checklist -->
+    <div class="card">
+      <div class="card-title">Daily checklist</div>
+      <div class="check-tabs">
+        <button class="check-tab active" onclick="switchTab('night',this)">Night start</button>
+        <button class="check-tab" onclick="switchTab('mid',this)">Midshift</button>
+        <button class="check-tab" onclick="switchTab('wrap',this)">Wrap up</button>
+      </div>
+      <div class="check-progress">
+        <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+        <div class="prog-label" id="prog-label">0%</div>
+      </div>
+      <div class="checklist" id="checklist-items"></div>
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <button onclick="resetChecklist()" style="font-size:11px;font-family:var(--mono);background:none;border:1px solid var(--border2);color:var(--muted);border-radius:6px;padding:4px 10px;cursor:pointer;">Reset</button>
+      </div>
+    </div>
+
+    <!-- Client tracker -->
+    <div class="card">
+      <div class="card-title">Client status tracker</div>
+      <div class="client-grid" id="client-grid"></div>
+    </div>
+  </div>
+
+  <!-- Notes + Reminders -->
+  <div class="grid-mid">
+    <div class="card">
+      <div class="card-title">Scratchpad — today's notes</div>
+      <textarea class="notes-area" id="notes-area" placeholder="Type anything here — updates received, things to follow up, client requests..."></textarea>
+      <div class="notes-footer">
+        <span class="notes-saved" id="notes-saved">Not saved yet</span>
+        <button class="notes-clear" onclick="clearNotes()">Clear</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Reminders</div>
+      <div class="reminder-list" id="reminder-list"></div>
+      <div class="add-reminder">
+        <input type="time" id="rem-time">
+        <input type="text" id="rem-text" placeholder="Reminder note...">
+        <button onclick="addReminder()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update log -->
+  <div class="card">
+    <div class="log-header">
+      <span class="card-title" style="margin:0">Update log — today</span>
+      <button class="log-clear" onclick="clearLog()">Clear log</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+      <select id="log-client-sel" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;font-family:var(--sans);outline:none;">
+        <option value="">Select client...</option>
+        <option>Kit-Kat</option><option>Candy</option><option>Gems</option>
+        <option>Galaxy</option><option>Platform</option><option>Boost</option>
+      </select>
+      <input type="text" id="log-text" placeholder="What update came in? (e.g. TAL change, new specs, lead count confirmed...)" style="flex:1;min-width:200px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;">
+      <button onclick="addLog()" style="background:rgba(110,231,183,0.1);border:1px solid rgba(110,231,183,0.25);color:var(--accent);border-radius:6px;padding:6px 14px;font-size:11px;font-family:var(--mono);cursor:pointer;">Log it</button>
+    </div>
+    <div class="log-entries" id="log-entries">
+      <div class="log-empty">No updates logged yet — add your first entry above</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ---- Clocks ----
+const zones = [
+  { id:'gmt', tz:'Europe/London', label:'GMT' },
+  { id:'est', tz:'America/New_York', label:'EST' },
+  { id:'pst', tz:'America/Los_Angeles', label:'PST' },
+  { id:'syd', tz:'Australia/Sydney', label:'AEDT' },
+];
+
+function tzStatus(h) {
+  if (h >= 9 && h < 18) return { cls:'status-open', text:'Office hours' };
+  if ((h >= 8 && h < 9) || (h >= 18 && h < 20)) return { cls:'status-soon', text:'Early/Late' };
+  return { cls:'status-closed', text:'Out of office' };
+}
+
+function updateClocks() {
+  const now = new Date();
+  // IST header
+  document.getElementById('ist-clock').textContent = now.toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:false});
+  document.getElementById('header-date').textContent = now.toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata',weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  zones.forEach(z => {
+    const t = document.getElementById('t-'+z.id);
+    const d = document.getElementById('d-'+z.id);
+    const s = document.getElementById('s-'+z.id);
+    if(!t) return;
+    t.textContent = now.toLocaleTimeString('en-GB',{timeZone:z.tz,hour:'2-digit',minute:'2-digit',hour12:false});
+    d.textContent = now.toLocaleDateString('en-GB',{timeZone:z.tz,weekday:'short',day:'numeric',month:'short'});
+    const h = parseInt(now.toLocaleString('en-GB',{timeZone:z.tz,hour:'numeric',hour12:false}));
+    const st = tzStatus(h);
+    s.className = 'tz-status '+st.cls;
+    s.textContent = st.text;
+  });
+}
+updateClocks();
+setInterval(updateClocks, 10000);
+
+// ---- Checklists ----
+const LISTS = {
+  night: [
+    { t:'Log into Convertr, Enhancio & Integrate — check lead counts', tag:'platform' },
+    { t:'Check emails from all clients — flag urgent ones', tag:'client' },
+    { t:'Note any overnight campaign errors or alerts', tag:'platform' },
+    { t:'Update today\'s lead delivery numbers per client', tag:'leads' },
+    { t:'Review campaign specs — any new changes from clients?', tag:'client' },
+    { t:'Communicate overnight updates to team', tag:'team' },
+  ],
+  mid: [
+    { t:'Check if UK / GMT clients have responded', tag:'client' },
+    { t:'Confirm TAL or targeting changes are implemented', tag:'team' },
+    { t:'Re-check lead counts on all platforms', tag:'leads' },
+    { t:'Log any new updates received into update log', tag:'platform' },
+    { t:'Respond to any pending client emails', tag:'client' },
+  ],
+  wrap: [
+    { t:'Final lead count check across all campaigns', tag:'leads' },
+    { t:'Send wrap-up update to clients who need it', tag:'client' },
+    { t:'Log all key updates of the day', tag:'platform' },
+    { t:'Note blockers or follow-ups for next shift', tag:'team' },
+    { t:'Check US clients are covered before you leave', tag:'client' },
+  ]
+};
+
+const tagMap = { platform:'tag-platform', client:'tag-client', team:'tag-team', leads:'tag-leads' };
+const tagLabel = { platform:'Platform', client:'Client', team:'Team', leads:'Leads' };
+let currentTab = 'night';
+let doneMap = { night:[], mid:[], wrap:[] };
+
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.check-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderChecklist();
+}
+
+function renderChecklist() {
+  const items = LISTS[currentTab];
+  const done = doneMap[currentTab];
+  const el = document.getElementById('checklist-items');
+  el.innerHTML = items.map((item,i) => `
+    <div class="check-item${done.includes(i)?' done':''}" onclick="toggleCheck(${i})">
+      <div class="ci-box"><div class="ci-check"></div></div>
+      <span class="ci-text">${item.t}</span>
+      <span class="ci-tag ${tagMap[item.tag]}">${tagLabel[item.tag]}</span>
+    </div>`).join('');
+  const total = items.length, n = done.length;
+  const pct = total ? Math.round(n/total*100) : 0;
+  document.getElementById('prog-fill').style.width = pct+'%';
+  document.getElementById('prog-label').textContent = pct+'%';
+}
+
+function toggleCheck(i) {
+  const done = doneMap[currentTab];
+  const idx = done.indexOf(i);
+  if(idx===-1) done.push(i); else done.splice(idx,1);
+  renderChecklist();
+}
+
+function resetChecklist() {
+  doneMap[currentTab] = [];
+  renderChecklist();
+}
+
+renderChecklist();
+
+// ---- Clients ----
+const CLIENTS = [
+  { name:'Kit-Kat', color:'#6ee7b7' },
+  { name:'Candy',   color:'#f9a8d4' },
+  { name:'Gems',    color:'#818cf8' },
+  { name:'Galaxy',  color:'#fbbf24' },
+  { name:'Platform',color:'#67e8f9' },
+  { name:'Boost',   color:'#fb923c' },
+];
+
+let clientUpdates = {}; // { 'Kit-Kat': [{time, text}] }
+let clientOpen = {};
+
+function renderClients() {
+  const el = document.getElementById('client-grid');
+  el.innerHTML = CLIENTS.map(c => {
+    const updates = clientUpdates[c.name] || [];
+    const last = updates[updates.length-1];
+    const hasUpdate = updates.length > 0;
+    const isOpen = clientOpen[c.name];
+    return `
+    <div>
+      <div class="client-row" onclick="toggleClient('${c.name}')">
+        <div class="client-dot" style="background:${c.color}"></div>
+        <span class="client-name">${c.name}</span>
+        <span class="client-status-badge ${hasUpdate?'s-updated':'s-pending'}">${hasUpdate?'Updated':'Pending'}</span>
+        <span class="client-time">${last?last.time:'—'}</span>
+        <span class="expand-icon" id="exp-${c.name}">${isOpen?'▲':'▼'}</span>
+      </div>
+      <div class="client-detail${isOpen?' open':''}" id="detail-${c.name}">
+        <div class="detail-label">Update log</div>
+        ${updates.length ? updates.map(u=>`<div class="update-entry"><span class="update-time">${u.time}</span><span class="update-text">${u.text}</span></div>`).join('') : '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">No updates logged yet</div>'}
+        <div class="add-update">
+          <input type="text" id="inp-${c.name}" placeholder="Log an update for ${c.name}..." onkeydown="if(event.key==='Enter')addClientUpdate('${c.name}')">
+          <button onclick="addClientUpdate('${c.name}')">Add</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleClient(name) {
+  clientOpen[name] = !clientOpen[name];
+  renderClients();
+}
+
+function addClientUpdate(name) {
+  const inp = document.getElementById('inp-'+name);
+  const text = inp.value.trim();
+  if(!text) return;
+  if(!clientUpdates[name]) clientUpdates[name]=[];
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:false});
+  clientUpdates[name].push({time, text});
+  // Also add to global log
+  addLogEntry(name, text, time);
+  inp.value = '';
+  renderClients();
+  showToast('Update logged for '+name);
+}
+
+renderClients();
+
+// ---- Notes ----
+const notesEl = document.getElementById('notes-area');
+const savedNotes = localStorage.getItem('kam_notes_'+today());
+if(savedNotes) notesEl.value = savedNotes;
+
+let saveTimer;
+notesEl.addEventListener('input', () => {
+  clearTimeout(saveTimer);
+  document.getElementById('notes-saved').textContent = 'Saving...';
+  saveTimer = setTimeout(() => {
+    localStorage.setItem('kam_notes_'+today(), notesEl.value);
+    document.getElementById('notes-saved').textContent = 'Saved ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:false});
+  }, 800);
+});
+
+function clearNotes() {
+  if(confirm('Clear today\'s notes?')) {
+    notesEl.value = '';
+    localStorage.removeItem('kam_notes_'+today());
+    document.getElementById('notes-saved').textContent = 'Cleared';
+  }
+}
+
+function today() {
+  return new Date().toISOString().slice(0,10);
+}
+
+// ---- Reminders ----
+let reminders = JSON.parse(localStorage.getItem('kam_reminders')||'[]');
+let firedReminders = new Set();
+
+function renderReminders() {
+  const el = document.getElementById('reminder-list');
+  if(!reminders.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px 0;font-family:var(--mono);">No reminders set</div>';
+    return;
+  }
+  el.innerHTML = reminders.map((r,i) => `
+    <div class="reminder-item">
+      <span class="reminder-time">${r.time}</span>
+      <span class="reminder-text">${r.text}</span>
+      <button class="reminder-del" onclick="deleteReminder(${i})">×</button>
+    </div>`).join('');
+}
+
+function addReminder() {
+  const t = document.getElementById('rem-time').value;
+  const txt = document.getElementById('rem-text').value.trim();
+  if(!t || !txt) return;
+  reminders.push({time:t, text:txt});
+  reminders.sort((a,b)=>a.time.localeCompare(b.time));
+  localStorage.setItem('kam_reminders', JSON.stringify(reminders));
+  document.getElementById('rem-time').value='';
+  document.getElementById('rem-text').value='';
+  renderReminders();
+  showToast('Reminder set for '+t);
+}
+
+function deleteReminder(i) {
+  reminders.splice(i,1);
+  localStorage.setItem('kam_reminders', JSON.stringify(reminders));
+  renderReminders();
+}
+
+function checkReminders() {
+  const now = new Date();
+  const cur = now.toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:false});
+  reminders.forEach((r,i) => {
+    if(r.time === cur && !firedReminders.has(i)) {
+      firedReminders.add(i);
+      showToast('⏰ Reminder: '+r.text, 6000);
+      if(Notification.permission==='granted') {
+        new Notification('KAM Dashboard', {body: r.text, icon: ''});
+      }
+    }
+  });
+}
+setInterval(checkReminders, 30000);
+
+// Request notification permission
+if(Notification.permission === 'default') Notification.requestPermission();
+
+renderReminders();
+
+// ---- Update Log ----
+let logEntries = [];
+
+function addLog() {
+  const client = document.getElementById('log-client-sel').value;
+  const text = document.getElementById('log-text').value.trim();
+  if(!client || !text) { showToast('Pick a client and enter an update'); return; }
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:false});
+  addLogEntry(client, text, time);
+  document.getElementById('log-text').value='';
+  document.getElementById('log-client-sel').value='';
+}
+
+function addLogEntry(client, text, time) {
+  logEntries.unshift({client, text, time});
+  renderLog();
+}
+
+function renderLog() {
+  const el = document.getElementById('log-entries');
+  if(!logEntries.length) {
+    el.innerHTML = '<div class="log-empty">No updates logged yet — add your first entry above</div>';
+    return;
+  }
+  el.innerHTML = logEntries.map(e => `
+    <div class="log-entry">
+      <span class="log-client">${e.client}</span>
+      <span class="log-time">${e.time}</span>
+      <span class="log-text">${e.text}</span>
+    </div>`).join('');
+}
+
+function clearLog() {
+  if(confirm('Clear all log entries?')) { logEntries=[]; renderLog(); }
+}
+
+// ---- Toast ----
+function showToast(msg, duration=3000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), duration);
+}
+</script>
+</body>
+</html>
