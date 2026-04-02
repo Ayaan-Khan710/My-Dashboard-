@@ -99,18 +99,18 @@
   .status-soon { background: rgba(251,191,36,0.1); color: var(--warn); border: 1px solid rgba(251,191,36,0.2); }
 
   /* Checklist */
-  .check-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+  .check-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
   .check-tab { font-size: 11px; font-family: var(--mono); padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border2); background: transparent; color: var(--muted); cursor: pointer; transition: all .2s; }
   .check-tab.active { background: rgba(110,231,183,0.1); color: var(--accent); border-color: rgba(110,231,183,0.3); }
-  .checklist { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+  .checklist { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; }
   .checklist::-webkit-scrollbar { width: 3px; }
   .checklist::-webkit-scrollbar-track { background: transparent; }
   .checklist::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
-  .check-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; transition: all .15s; background: var(--surface2); }
+  .check-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border); transition: all .15s; background: var(--surface2); }
   .check-item:hover { border-color: var(--border2); }
   .check-item.done { opacity: .45; }
   .check-item.done .ci-text { text-decoration: line-through; }
-  .ci-box { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--muted); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .ci-box { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--muted); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; cursor: pointer; }
   .check-item.done .ci-box { background: var(--accent); border-color: var(--accent); }
   .ci-check { display: none; }
   .check-item.done .ci-check { display: block; width: 8px; height: 8px; border-right: 2px solid #0a0c10; border-bottom: 2px solid #0a0c10; transform: rotate(45deg) translate(-1px,-1px); }
@@ -120,10 +120,23 @@
   .tag-platform { background: rgba(251,191,36,0.1); color: var(--warn); }
   .tag-team { background: rgba(249,168,212,0.1); color: var(--accent3); }
   .tag-leads { background: rgba(110,231,183,0.1); color: var(--accent); }
+  .tag-general { background: rgba(255,255,255,0.06); color: var(--muted); }
+  .ci-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; opacity: 0; transition: opacity .15s, color .15s; flex-shrink: 0; }
+  .check-item:hover .ci-del { opacity: 1; }
+  .ci-del:hover { color: var(--danger); }
   .check-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
   .prog-bar { flex: 1; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
   .prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width .4s ease; }
   .prog-label { font-size: 11px; font-family: var(--mono); color: var(--muted); min-width: 36px; text-align: right; }
+  .add-check-row { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .add-check-row input[type="text"] { flex: 1; min-width: 120px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--text); font-family: var(--sans); outline: none; }
+  .add-check-row input:focus { border-color: rgba(110,231,183,0.4); }
+  .add-check-row select { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); border-radius: 6px; padding: 6px 8px; font-size: 11px; font-family: var(--mono); outline: none; }
+  .add-check-row .btn-add-item { background: rgba(110,231,183,0.1); border: 1px solid rgba(110,231,183,0.25); color: var(--accent); border-radius: 6px; padding: 6px 12px; font-size: 11px; font-family: var(--mono); cursor: pointer; white-space: nowrap; transition: all .15s; }
+  .add-check-row .btn-add-item:hover { background: rgba(110,231,183,0.2); }
+  .checklist-footer { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .btn-reset { font-size: 11px; font-family: var(--mono); background: none; border: 1px solid var(--border2); color: var(--muted); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+  .btn-reset:hover { color: var(--text); }
 
   /* Client tracker */
   .client-grid { display: flex; flex-direction: column; gap: 8px; }
@@ -180,7 +193,17 @@
   .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
   .log-clear { font-size: 11px; font-family: var(--mono); color: var(--muted); background: none; border: none; cursor: pointer; text-decoration: underline; }
 
-  /* Toast notification */
+  .log-view-btn { font-size:11px; font-family:var(--mono); padding:3px 12px; border-radius:20px; border:1px solid var(--border2); background:transparent; color:var(--muted); cursor:pointer; transition:all .2s; }
+  .log-view-btn.active { background:rgba(129,140,248,0.1); color:var(--accent2); border-color:rgba(129,140,248,0.3); }
+  .hist-day-group { background: var(--surface2); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; }
+  .hist-day-header { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; border-bottom:1px solid var(--border); cursor:pointer; }
+  .hist-day-label { font-size:12px; font-family:var(--mono); color:var(--accent2); font-weight:700; }
+  .hist-day-count { font-size:10px; font-family:var(--mono); color:var(--muted); background:var(--surface); padding:1px 8px; border-radius:10px; }
+  .hist-day-entries { display:flex; flex-direction:column; gap:0; }
+  .hist-day-entries .log-entry { border-radius:0; border:none; border-bottom:1px solid var(--border); }
+  .hist-day-entries .log-entry:last-child { border-bottom:none; }
+  .hist-entries::-webkit-scrollbar { width:3px; }
+  .hist-entries::-webkit-scrollbar-thumb { background:var(--border2); border-radius:10px; }
   #toast {
     position: fixed;
     top: 20px;
@@ -262,8 +285,20 @@
         <div class="prog-label" id="prog-label">0%</div>
       </div>
       <div class="checklist" id="checklist-items"></div>
-      <div style="margin-top:10px; display:flex; gap:8px;">
-        <button onclick="resetChecklist()" style="font-size:11px;font-family:var(--mono);background:none;border:1px solid var(--border2);color:var(--muted);border-radius:6px;padding:4px 10px;cursor:pointer;">Reset</button>
+      <div class="add-check-row">
+        <input type="text" id="new-check-text" placeholder="Add your own task..." onkeydown="if(event.key==='Enter')addCheckItem()">
+        <select id="new-check-tag">
+          <option value="general">General</option>
+          <option value="client">Client</option>
+          <option value="platform">Platform</option>
+          <option value="leads">Leads</option>
+          <option value="team">Team</option>
+        </select>
+        <button class="btn-add-item" onclick="addCheckItem()">+ Add</button>
+      </div>
+      <div class="checklist-footer">
+        <button class="btn-reset" onclick="resetChecklist()">Reset ticks</button>
+        <span style="font-size:11px;color:var(--muted);font-family:var(--mono);">Items save automatically</span>
       </div>
     </div>
 
@@ -297,22 +332,48 @@
   </div>
 
   <!-- Update log -->
-  <div class="card">
+  <div class="card" id="log-card">
     <div class="log-header">
-      <span class="card-title" style="margin:0">Update log — today</span>
-      <button class="log-clear" onclick="clearLog()">Clear log</button>
+      <span class="card-title" style="margin:0">Update log</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="log-view-btn active" id="btn-view-today" onclick="switchLogView('today')">Today</button>
+        <button class="log-view-btn" id="btn-view-history" onclick="switchLogView('history')">All history</button>
+        <button class="log-clear" onclick="clearLog()">Clear today</button>
+      </div>
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+
+    <!-- Add new entry row -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
       <select id="log-client-sel" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;font-family:var(--sans);outline:none;">
         <option value="">Select client...</option>
         <option>Kit-Kat</option><option>Candy</option><option>Gems</option>
         <option>Galaxy</option><option>Platform</option><option>Boost</option>
       </select>
-      <input type="text" id="log-text" placeholder="What update came in? (e.g. TAL change, new specs, lead count confirmed...)" style="flex:1;min-width:200px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;">
+      <input type="text" id="log-text" placeholder="What update came in? (e.g. TAL change, new specs, lead count confirmed...)" style="flex:1;min-width:200px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;" onkeydown="if(event.key==='Enter')addLog()">
       <button onclick="addLog()" style="background:rgba(110,231,183,0.1);border:1px solid rgba(110,231,183,0.25);color:var(--accent);border-radius:6px;padding:6px 14px;font-size:11px;font-family:var(--mono);cursor:pointer;">Log it</button>
     </div>
-    <div class="log-entries" id="log-entries">
-      <div class="log-empty">No updates logged yet — add your first entry above</div>
+
+    <!-- Today view -->
+    <div id="log-view-today">
+      <div class="log-entries" id="log-entries">
+        <div class="log-empty">No updates logged yet — add your first entry above</div>
+      </div>
+    </div>
+
+    <!-- History view -->
+    <div id="log-view-history" style="display:none;">
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+        <input type="date" id="hist-date-filter" onchange="renderHistory()" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;font-family:var(--mono);outline:none;color-scheme:dark;">
+        <select id="hist-client-filter" onchange="renderHistory()" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;font-family:var(--sans);outline:none;">
+          <option value="">All clients</option>
+          <option>Kit-Kat</option><option>Candy</option><option>Gems</option>
+          <option>Galaxy</option><option>Platform</option><option>Boost</option>
+        </select>
+        <button onclick="clearHistoryFilters()" style="font-size:11px;font-family:var(--mono);background:none;border:1px solid var(--border2);color:var(--muted);border-radius:6px;padding:5px 10px;cursor:pointer;">Clear filters</button>
+        <span id="hist-count" style="font-size:11px;font-family:var(--mono);color:var(--muted);margin-left:auto;"></span>
+      </div>
+      <!-- Date groups -->
+      <div id="hist-entries" style="display:flex;flex-direction:column;gap:14px;max-height:420px;overflow-y:auto;"></div>
     </div>
   </div>
 
@@ -355,8 +416,8 @@ function updateClocks() {
 updateClocks();
 setInterval(updateClocks, 10000);
 
-// ---- Checklists ----
-const LISTS = {
+// ---- Checklists (fully editable, saved to localStorage) ----
+const DEFAULT_LISTS = {
   night: [
     { t:'Log into Convertr, Enhancio & Integrate — check lead counts', tag:'platform' },
     { t:'Check emails from all clients — flag urgent ones', tag:'client' },
@@ -381,10 +442,34 @@ const LISTS = {
   ]
 };
 
-const tagMap = { platform:'tag-platform', client:'tag-client', team:'tag-team', leads:'tag-leads' };
-const tagLabel = { platform:'Platform', client:'Client', team:'Team', leads:'Leads' };
+const tagMap   = { platform:'tag-platform', client:'tag-client', team:'tag-team', leads:'tag-leads', general:'tag-general' };
+const tagLabel = { platform:'Platform', client:'Client', team:'Team', leads:'Leads', general:'General' };
+
+// Load saved lists or fall back to defaults
+function loadLists() {
+  try {
+    const saved = localStorage.getItem('kam_lists');
+    return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_LISTS));
+  } catch(e) { return JSON.parse(JSON.stringify(DEFAULT_LISTS)); }
+}
+function saveLists() {
+  localStorage.setItem('kam_lists', JSON.stringify(LISTS));
+}
+
+// Load saved done-state (resets daily)
+function loadDoneMap() {
+  try {
+    const saved = localStorage.getItem('kam_done_'+today());
+    return saved ? JSON.parse(saved) : { night:[], mid:[], wrap:[] };
+  } catch(e) { return { night:[], mid:[], wrap:[] }; }
+}
+function saveDoneMap() {
+  localStorage.setItem('kam_done_'+today(), JSON.stringify(doneMap));
+}
+
+let LISTS = loadLists();
 let currentTab = 'night';
-let doneMap = { night:[], mid:[], wrap:[] };
+let doneMap = loadDoneMap();
 
 function switchTab(tab, btn) {
   currentTab = tab;
@@ -397,12 +482,17 @@ function renderChecklist() {
   const items = LISTS[currentTab];
   const done = doneMap[currentTab];
   const el = document.getElementById('checklist-items');
-  el.innerHTML = items.map((item,i) => `
-    <div class="check-item${done.includes(i)?' done':''}" onclick="toggleCheck(${i})">
-      <div class="ci-box"><div class="ci-check"></div></div>
-      <span class="ci-text">${item.t}</span>
-      <span class="ci-tag ${tagMap[item.tag]}">${tagLabel[item.tag]}</span>
-    </div>`).join('');
+  if(!items.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:16px 0;font-family:var(--mono);">No tasks yet — add one below</div>';
+  } else {
+    el.innerHTML = items.map((item,i) => `
+      <div class="check-item${done.includes(i)?' done':''}">
+        <div class="ci-box" onclick="toggleCheck(${i})"><div class="ci-check"></div></div>
+        <span class="ci-text" onclick="toggleCheck(${i})">${item.t}</span>
+        <span class="ci-tag ${tagMap[item.tag]||'tag-general'}">${tagLabel[item.tag]||'General'}</span>
+        <button class="ci-del" onclick="deleteCheckItem(${i})" title="Delete">×</button>
+      </div>`).join('');
+  }
   const total = items.length, n = done.length;
   const pct = total ? Math.round(n/total*100) : 0;
   document.getElementById('prog-fill').style.width = pct+'%';
@@ -413,11 +503,34 @@ function toggleCheck(i) {
   const done = doneMap[currentTab];
   const idx = done.indexOf(i);
   if(idx===-1) done.push(i); else done.splice(idx,1);
+  saveDoneMap();
+  renderChecklist();
+}
+
+function addCheckItem() {
+  const inp = document.getElementById('new-check-text');
+  const tag = document.getElementById('new-check-tag').value;
+  const text = inp.value.trim();
+  if(!text) return;
+  LISTS[currentTab].push({ t: text, tag });
+  saveLists();
+  inp.value = '';
+  renderChecklist();
+  showToast('Task added to ' + currentTab + ' list');
+}
+
+function deleteCheckItem(i) {
+  LISTS[currentTab].splice(i, 1);
+  // Fix done indices
+  doneMap[currentTab] = doneMap[currentTab].filter(d => d !== i).map(d => d > i ? d-1 : d);
+  saveLists();
+  saveDoneMap();
   renderChecklist();
 }
 
 function resetChecklist() {
   doneMap[currentTab] = [];
+  saveDoneMap();
   renderChecklist();
 }
 
@@ -433,7 +546,7 @@ const CLIENTS = [
   { name:'Boost',   color:'#fb923c' },
 ];
 
-let clientUpdates = {}; // { 'Kit-Kat': [{time, text}] }
+let clientUpdates = JSON.parse(localStorage.getItem('kam_client_updates_'+today())||'{}');
 let clientOpen = {};
 
 function renderClients() {
@@ -477,6 +590,7 @@ function addClientUpdate(name) {
   const now = new Date();
   const time = now.toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:false});
   clientUpdates[name].push({time, text});
+  localStorage.setItem('kam_client_updates_'+today(), JSON.stringify(clientUpdates));
   // Also add to global log
   addLogEntry(name, text, time);
   inp.value = '';
@@ -571,22 +685,37 @@ if(Notification.permission === 'default') Notification.requestPermission();
 renderReminders();
 
 // ---- Update Log ----
-let logEntries = [];
+// Each day's entries stored under 'kam_log_YYYY-MM-DD'
+// Entry format: { client, text, time }
+
+let logEntries = JSON.parse(localStorage.getItem('kam_log_'+today())||'[]');
+let currentLogView = 'today';
+
+function switchLogView(view) {
+  currentLogView = view;
+  document.getElementById('log-view-today').style.display   = view==='today'   ? '' : 'none';
+  document.getElementById('log-view-history').style.display = view==='history' ? '' : 'none';
+  document.getElementById('btn-view-today').classList.toggle('active',   view==='today');
+  document.getElementById('btn-view-history').classList.toggle('active', view==='history');
+  if(view==='history') renderHistory();
+}
 
 function addLog() {
   const client = document.getElementById('log-client-sel').value;
-  const text = document.getElementById('log-text').value.trim();
+  const text   = document.getElementById('log-text').value.trim();
   if(!client || !text) { showToast('Pick a client and enter an update'); return; }
-  const now = new Date();
+  const now  = new Date();
   const time = now.toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:false});
   addLogEntry(client, text, time);
-  document.getElementById('log-text').value='';
-  document.getElementById('log-client-sel').value='';
+  document.getElementById('log-text').value = '';
+  document.getElementById('log-client-sel').value = '';
 }
 
 function addLogEntry(client, text, time) {
   logEntries.unshift({client, text, time});
+  localStorage.setItem('kam_log_'+today(), JSON.stringify(logEntries));
   renderLog();
+  if(currentLogView==='history') renderHistory();
 }
 
 function renderLog() {
@@ -603,9 +732,89 @@ function renderLog() {
     </div>`).join('');
 }
 
-function clearLog() {
-  if(confirm('Clear all log entries?')) { logEntries=[]; renderLog(); }
+// Collect all log dates from localStorage
+function getAllLogDates() {
+  const dates = [];
+  for(let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if(key && key.startsWith('kam_log_')) {
+      const d = key.replace('kam_log_','');
+      if(d.match(/^\d{4}-\d{2}-\d{2}$/)) dates.push(d);
+    }
+  }
+  return dates.sort((a,b) => b.localeCompare(a)); // newest first
 }
+
+function renderHistory() {
+  const dateFilter   = document.getElementById('hist-date-filter').value;
+  const clientFilter = document.getElementById('hist-client-filter').value;
+  const el           = document.getElementById('hist-entries');
+  const countEl      = document.getElementById('hist-count');
+
+  let allDates = getAllLogDates();
+  if(dateFilter) allDates = allDates.filter(d => d === dateFilter);
+
+  if(!allDates.length) {
+    el.innerHTML = '<div class="log-empty">No log entries found for the selected filters</div>';
+    countEl.textContent = '0 entries';
+    return;
+  }
+
+  let totalCount = 0;
+  const groups = allDates.map(date => {
+    let entries = JSON.parse(localStorage.getItem('kam_log_'+date)||'[]');
+    if(clientFilter) entries = entries.filter(e => e.client === clientFilter);
+    if(!entries.length) return null;
+    totalCount += entries.length;
+
+    const label = formatDateLabel(date);
+    const rows = entries.map(e => `
+      <div class="log-entry">
+        <span class="log-client">${e.client}</span>
+        <span class="log-time">${e.time}</span>
+        <span class="log-text">${e.text}</span>
+      </div>`).join('');
+
+    return `
+      <div class="hist-day-group">
+        <div class="hist-day-header">
+          <span class="hist-day-label">${label}</span>
+          <span class="hist-day-count">${entries.length} update${entries.length!==1?'s':''}</span>
+        </div>
+        <div class="hist-day-entries">${rows}</div>
+      </div>`;
+  }).filter(Boolean);
+
+  el.innerHTML = groups.length ? groups.join('') : '<div class="log-empty">No entries match your filters</div>';
+  countEl.textContent = totalCount + ' entr' + (totalCount===1?'y':'ies');
+}
+
+function formatDateLabel(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const today_d  = new Date(today()  + 'T12:00:00');
+  const diff = Math.round((today_d - d) / 86400000);
+  const formatted = d.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  if(diff === 0) return 'Today — ' + formatted;
+  if(diff === 1) return 'Yesterday — ' + formatted;
+  return formatted;
+}
+
+function clearHistoryFilters() {
+  document.getElementById('hist-date-filter').value   = '';
+  document.getElementById('hist-client-filter').value = '';
+  renderHistory();
+}
+
+function clearLog() {
+  if(confirm('Clear today\'s log entries?')) {
+    logEntries = [];
+    localStorage.removeItem('kam_log_'+today());
+    renderLog();
+    if(currentLogView==='history') renderHistory();
+  }
+}
+
+renderLog();
 
 // ---- Toast ----
 function showToast(msg, duration=3000) {
