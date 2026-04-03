@@ -170,18 +170,38 @@
   .notes-clear { font-size: 11px; font-family: var(--mono); color: var(--muted); background: none; border: none; cursor: pointer; text-decoration: underline; }
 
   /* Reminders */
-  .reminder-list { display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto; }
+  .reminder-list { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; margin-bottom: 4px; }
   .reminder-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--surface2); border-radius: 8px; border: 1px solid var(--border); font-size: 13px; }
+  .reminder-item.urgent {
+    background: rgba(248,113,113,0.06);
+    border-color: rgba(248,113,113,0.3);
+  }
   .reminder-time { font-family: var(--mono); font-size: 12px; color: var(--accent2); min-width: 48px; }
+  .reminder-date-label { font-family: var(--mono); font-size: 10px; color: var(--muted); min-width: 60px; }
   .reminder-text { flex: 1; color: var(--text); }
+  .reminder-text.urgent {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--danger);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .urgent-badge { font-size: 9px; font-family: var(--mono); background: rgba(248,113,113,0.15); color: var(--danger); border: 1px solid rgba(248,113,113,0.3); border-radius: 4px; padding: 1px 6px; letter-spacing: .06em; flex-shrink: 0; }
   .reminder-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 4px; line-height: 1; }
   .reminder-del:hover { color: var(--danger); }
-  .add-reminder { display: flex; gap: 8px; margin-top: 10px; }
-  .add-reminder input[type="time"] { background: var(--bg); border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--text); font-family: var(--mono); outline: none; width: 100px; }
-  .add-reminder input[type="text"] { flex: 1; background: var(--bg); border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--text); font-family: var(--sans); outline: none; }
+  .add-reminder { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .add-reminder input[type="date"],
+  .add-reminder input[type="time"] { background: var(--bg); border: 1px solid var(--border2); border-radius: 6px; padding: 6px 8px; font-size: 12px; color: var(--text); font-family: var(--mono); outline: none; color-scheme: dark; }
+  .add-reminder input[type="date"] { width: 130px; }
+  .add-reminder input[type="time"] { width: 90px; }
+  .add-reminder select { background: var(--bg); border: 1px solid var(--border2); color: var(--text); border-radius: 6px; padding: 6px 8px; font-size: 11px; font-family: var(--mono); outline: none; }
+  .add-reminder input[type="text"] { flex: 1; min-width: 100px; background: var(--bg); border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--text); font-family: var(--sans); outline: none; }
   .add-reminder input:focus { border-color: rgba(110,231,183,0.4); }
-  .add-reminder button { background: rgba(129,140,248,0.1); border: 1px solid rgba(129,140,248,0.25); color: var(--accent2); border-radius: 6px; padding: 6px 12px; font-size: 11px; font-family: var(--mono); cursor: pointer; transition: all .15s; }
+  .add-reminder button { background: rgba(129,140,248,0.1); border: 1px solid rgba(129,140,248,0.25); color: var(--accent2); border-radius: 6px; padding: 6px 12px; font-size: 11px; font-family: var(--mono); cursor: pointer; transition: all .15s; white-space: nowrap; }
   .add-reminder button:hover { background: rgba(129,140,248,0.2); }
+  @keyframes urgent-pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+  .reminder-item.urgent .reminder-text { animation: urgent-pulse 2s ease-in-out infinite; }
 
   /* Update log */
   .log-entries { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
@@ -324,8 +344,13 @@
       <div class="card-title">Reminders</div>
       <div class="reminder-list" id="reminder-list"></div>
       <div class="add-reminder">
+        <input type="date" id="rem-date" style="width:130px;">
         <input type="time" id="rem-time">
-        <input type="text" id="rem-text" placeholder="Reminder note...">
+        <select id="rem-urgency">
+          <option value="normal">Normal</option>
+          <option value="urgent">Urgent</option>
+        </select>
+        <input type="text" id="rem-text" placeholder="Reminder note..." style="flex:1;min-width:100px;">
         <button onclick="addReminder()">Add</button>
       </div>
     </div>
@@ -631,31 +656,62 @@ function today() {
 let reminders = JSON.parse(localStorage.getItem('kam_reminders')||'[]');
 let firedReminders = new Set();
 
+function formatReminderDate(dateStr) {
+  if(!dateStr) return '';
+  const d = new Date(dateStr + 'T12:00:00');
+  const t = today();
+  const diff = Math.round((new Date(dateStr+'T12:00:00') - new Date(t+'T12:00:00')) / 86400000);
+  if(diff === 0) return 'Today';
+  if(diff === 1) return 'Tomorrow';
+  if(diff === -1) return 'Yesterday';
+  return d.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+}
+
 function renderReminders() {
   const el = document.getElementById('reminder-list');
-  if(!reminders.length) {
+  const todayStr = today();
+
+  // Sort: today/future first, then by date, then by time
+  const sorted = [...reminders].map((r,i)=>({...r,_i:i})).sort((a,b)=>{
+    const da = a.date||'9999-12-31', db = b.date||'9999-12-31';
+    if(da !== db) return da.localeCompare(db);
+    return a.time.localeCompare(b.time);
+  });
+
+  if(!sorted.length) {
     el.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px 0;font-family:var(--mono);">No reminders set</div>';
     return;
   }
-  el.innerHTML = reminders.map((r,i) => `
-    <div class="reminder-item">
+
+  el.innerHTML = sorted.map(r => {
+    const isUrgent = r.urgency === 'urgent';
+    const isPast = r.date && r.date < todayStr;
+    const dateLabel = formatReminderDate(r.date);
+    return `
+    <div class="reminder-item${isUrgent?' urgent':''}${isPast?' style="opacity:.5"':''}">
+      ${dateLabel ? `<span class="reminder-date-label">${dateLabel}</span>` : ''}
       <span class="reminder-time">${r.time}</span>
-      <span class="reminder-text">${r.text}</span>
-      <button class="reminder-del" onclick="deleteReminder(${i})">×</button>
-    </div>`).join('');
+      ${isUrgent ? '<span class="urgent-badge">URGENT</span>' : ''}
+      <span class="reminder-text${isUrgent?' urgent':''}">${r.text}</span>
+      <button class="reminder-del" onclick="deleteReminder(${r._i})">×</button>
+    </div>`;
+  }).join('');
 }
 
 function addReminder() {
-  const t = document.getElementById('rem-time').value;
-  const txt = document.getElementById('rem-text').value.trim();
-  if(!t || !txt) return;
-  reminders.push({time:t, text:txt});
-  reminders.sort((a,b)=>a.time.localeCompare(b.time));
+  const date    = document.getElementById('rem-date').value;
+  const t       = document.getElementById('rem-time').value;
+  const txt     = document.getElementById('rem-text').value.trim();
+  const urgency = document.getElementById('rem-urgency').value;
+  if(!t || !txt) { showToast('Enter a time and reminder text'); return; }
+  reminders.push({ date, time: t, text: txt, urgency });
   localStorage.setItem('kam_reminders', JSON.stringify(reminders));
-  document.getElementById('rem-time').value='';
-  document.getElementById('rem-text').value='';
+  document.getElementById('rem-date').value    = '';
+  document.getElementById('rem-time').value    = '';
+  document.getElementById('rem-text').value    = '';
+  document.getElementById('rem-urgency').value = 'normal';
   renderReminders();
-  showToast('Reminder set for '+t);
+  showToast(urgency==='urgent' ? '🚨 Urgent reminder set!' : 'Reminder set for ' + t);
 }
 
 function deleteReminder(i) {
@@ -666,13 +722,20 @@ function deleteReminder(i) {
 
 function checkReminders() {
   const now = new Date();
-  const cur = now.toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:false});
+  const curDate = today();
+  const curTime = now.toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:false});
   reminders.forEach((r,i) => {
-    if(r.time === cur && !firedReminders.has(i)) {
+    const dateMatch = !r.date || r.date === curDate;
+    if(dateMatch && r.time === curTime && !firedReminders.has(i)) {
       firedReminders.add(i);
-      showToast('⏰ Reminder: '+r.text, 6000);
+      const isUrgent = r.urgency === 'urgent';
+      const msg = (isUrgent ? '🚨 URGENT: ' : '⏰ Reminder: ') + r.text;
+      showToast(msg, isUrgent ? 10000 : 6000);
       if(Notification.permission==='granted') {
-        new Notification('KAM Dashboard', {body: r.text, icon: ''});
+        new Notification(isUrgent ? '🚨 URGENT REMINDER' : 'KAM Dashboard', {
+          body: r.text,
+          requireInteraction: isUrgent
+        });
       }
     }
   });
